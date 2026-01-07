@@ -1,0 +1,114 @@
+const materias = [
+  // ===== SEMESTRE 1 =====
+  { id:"hab", nombre:"Habilidades Digitales para el Aprendizaje", creditos:3, semestre:1, requisitos:[] },
+  { id:"com", nombre:"Comunicación escrita y procesos lectores", creditos:2, semestre:1, requisitos:[] },
+  { id:"ing1", nombre:"Inglés I", creditos:3, semestre:1, requisitos:[] },
+  { id:"pre", nombre:"Precálculo", creditos:2, semestre:1, requisitos:[] },
+  { id:"log", nombre:"Lógica Matemática", creditos:2, semestre:1, requisitos:[] },
+
+  // ===== SEMESTRE 2 =====
+  { id:"ing2", nombre:"Inglés II", creditos:3, semestre:2, requisitos:["ing1"] },
+  { id:"cald", nombre:"Cálculo Diferencial", creditos:3, semestre:2, requisitos:["pre"] },
+  { id:"prob", nombre:"Probabilidad y Estadística", creditos:2, semestre:2, requisitos:["cald"] },
+  { id:"fis1", nombre:"Física Mecánica", creditos:2, semestre:2, requisitos:["cald"] },
+  { id:"alg", nombre:"Álgebra Lineal", creditos:2, semestre:2, requisitos:["cald"] },
+
+  // ===== SEMESTRE 3 =====
+  { id:"ing3", nombre:"Inglés III", creditos:3, semestre:3, requisitos:["ing2"] },
+  { id:"cale", nombre:"Cálculo Integral", creditos:3, semestre:3, requisitos:["cald"] },
+  { id:"fis2", nombre:"Física Electromagnética", creditos:2, semestre:3, requisitos:["fis1"] },
+  { id:"disc", nombre:"Matemática Discreta", creditos:2, semestre:3, requisitos:["log"] },
+  { id:"intro", nombre:"Introducción a la Ingeniería", creditos:1, semestre:3, requisitos:[] },
+
+  // ===== SEMESTRE 4 =====
+  { id:"ed", nombre:"Ecuaciones Diferenciales", creditos:2, semestre:4, requisitos:["cale"] },
+  { id:"num", nombre:"Métodos Numéricos", creditos:2, semestre:4, requisitos:["ed"] },
+  { id:"inv", nombre:"Metodología de la Investigación", creditos:2, semestre:4, requisitos:[] },
+  { id:"prog1", nombre:"Lógica de Programación", creditos:3, semestre:4, requisitos:["disc"] },
+
+  // ===== SEMESTRE 5 =====
+  { id:"poo", nombre:"Programación Orientada a Objetos", creditos:3, semestre:5, requisitos:["prog1"] },
+  { id:"estr", nombre:"Estructuras de Datos", creditos:3, semestre:5, requisitos:["poo"] },
+  { id:"red", nombre:"Fundamentos de Redes", creditos:3, semestre:5, requisitos:["prog1"] },
+  { id:"sis", nombre:"Análisis y Diseño de Sistemas de Información", creditos:3, semestre:5, requisitos:["poo"] },
+
+  // ===== SEMESTRE 6 =====
+  { id:"avz", nombre:"Programación Avanzada", creditos:3, semestre:6, requisitos:["estr"] },
+  { id:"web", nombre:"Ingeniería Web I", creditos:3, semestre:6, requisitos:["poo"] },
+  { id:"bd", nombre:"Administración de Bases de Datos", creditos:3, semestre:6, requisitos:["sis"] },
+  { id:"arq", nombre:"Arquitectura de Información y Usabilidad", creditos:3, semestre:6, requisitos:["sis"] },
+
+  // ===== SEMESTRE 7 =====
+  { id:"tran", nombre:"Sistemas Transaccionales", creditos:3, semestre:7, requisitos:["bd"] },
+  { id:"pat", nombre:"Patrones, Estándares y Metodologías", creditos:3, semestre:7, requisitos:["web"] },
+  { id:"cal", nombre:"Estándares y Métricas de Calidad de Software", creditos:3, semestre:7, requisitos:["pat"] },
+  { id:"seg", nombre:"Seguridad Informática", creditos:3, semestre:7, requisitos:["red"] },
+
+  // ===== SEMESTRE 8 =====
+  { id:"mov", nombre:"Computación Móvil", creditos:3, semestre:8, requisitos:["avz"] },
+  { id:"dist", nombre:"Sistemas Distribuidos", creditos:3, semestre:8, requisitos:["avz"] },
+  { id:"ia", nombre:"Inteligencia Artificial", creditos:2, semestre:8, requisitos:["prob"] },
+  { id:"so", nombre:"Sistemas Operativos", creditos:3, semestre:8, requisitos:["estr"] }
+];
+
+// ===================== LÓGICA =====================
+let aprobadas = new Set(JSON.parse(localStorage.getItem("aprobadas") || "[]"));
+
+function puedeCursar(m) {
+  return m.requisitos.every(r => aprobadas.has(r));
+}
+
+function toggleMateria(id) {
+  const materia = materias.find(m => m.id === id);
+  if (!puedeCursar(materia)) return;
+
+  aprobadas.has(id) ? aprobadas.delete(id) : aprobadas.add(id);
+  localStorage.setItem("aprobadas", JSON.stringify([...aprobadas]));
+  render();
+}
+
+function render() {
+  const malla = document.getElementById("malla");
+  malla.innerHTML = "";
+
+  let total = 0;
+  const semestres = [...new Set(materias.map(m => m.semestre))];
+
+  semestres.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "semestre";
+    div.dataset.semestre = s;
+
+    const h2 = document.createElement("h2");
+    h2.textContent = `Semestre ${s}`;
+    div.appendChild(h2);
+
+    let sumaSemestre = 0;
+
+    materias.filter(m => m.semestre === s).forEach(m => {
+      const el = document.createElement("div");
+      el.className = "materia";
+      el.textContent = `${m.nombre} (${m.creditos} cr)`;
+
+      if (!puedeCursar(m)) el.classList.add("bloqueada");
+      if (aprobadas.has(m.id)) {
+        el.classList.add("aprobada");
+        sumaSemestre += m.creditos;
+        total += m.creditos;
+      }
+
+      el.onclick = () => toggleMateria(m.id);
+      div.appendChild(el);
+    });
+
+    const p = document.createElement("p");
+    p.textContent = `Créditos aprobados: ${sumaSemestre}`;
+    div.appendChild(p);
+
+    malla.appendChild(div);
+  });
+
+  document.getElementById("total-creditos").textContent = total;
+}
+
+render();
